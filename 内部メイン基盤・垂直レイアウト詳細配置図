@@ -1,0 +1,65 @@
+
+
+## 『HERMESPIDER-12』内部メイン基盤・垂直レイアウト詳細配置図
+
+====================================== [TOP SHELL: Aluminum Die-cast] ======================================
+  [Thermal Pad] ──► █ SoC (Broadcom) █  █ UWB RF █  █ 920MHz RF █  ◄── [Direct Chassis Thermal Coupling]
+ ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 【LAYER 1: COMMUNICATION & COGNITIVE LAYER】                                                            │
+ │  [Components]:                                                                                          │
+ │   - Raspberry Pi 5 (8GB RAM) - Executing Dialogue AI / Triage NLP / Data Compression                    │
+ │   - Decoy/Capsule Release Actuator Control Circuit (Upper Hatch Release Solenoid)                       │
+ │   - UWB & 920MHz Hybrid Wireless Modules (Co-axial lines leading directly to top antennas)               │
+ └─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+        ▲                                                                                           ▲
+        │ [High-Speed Signal Bus: SPI / UART]                                                       │ [5V Logic Power]
+        ▼                                                                                           ▼
+ ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+ █ [GND-Plane EMI Shield Bulkhead] (Physical & Electromagnetic Isolation Barrier)                         █
+ ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+        ▲                                                                                           ▲
+        │ [Optical Isolation: High-Speed Photocouplers]                                             │ [5V Isolated Power]
+        ▼                                                                                           ▼
+ ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 【LAYER 2: REAL-TIME SIGNAL PROCESSING LAYER】                                                          │
+ │  [Components]:                                                                                          │
+ │   - STM32H7 Dual-Core Microcontroller (Running Spinal Reflex RTOS Loops)                                │
+ │   - 12ch Differential Operational Amplifiers (ADC pre-filters for 12-leg spring sensors)               │
+ │   - 4ch Differential Pressure & Temperature Compensation Bridge Circuits (Outer Shell sensors)          │
+ └─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                                                                                                    ▲
+                                                                                                    │ [5V Logic Power]
+                                                                                                    ▼
+ ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 【LAYER 3: HIGH-CURRENT POWER & BUS DRIVER LAYER】                                                       │
+ │  [Components]:                                                                                          │
+ │   - 4-Channel Independent FDCAN Transceivers (Separated for 4 leg groups to avoid bandwidth saturation)  │
+ │   - High-Power TVS (Transient Voltage Suppressor) Array & Bulk Capacitors (Absorbs Counter-EMF / Surges)  │
+ │   - High-Precision Buck Regulators (24V Battery Input ──► 12V Servo Power / 5V Logic Power)             │
+ └─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+ ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │  █スターグラウンド（1点接地）銅製ブスバー（0V基準プレート）█                                                   │
+ └─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+  [Thermal Pad] ──► █ Regulators / TVS █ ──────────────────────────► [Direct Bottom Chassis Thermal Coupling]
+==================================== [BOTTOM SHELL: Aluminum Die-cast] ====================================
+
+------------------------------
+## 各階層の物理配置仕様・クリアランス（製造ファクトデータ）
+
+   1. LAYER 1（最上層：脳）厚み・間隔仕様
+   * 垂直クリアランス（対天面）: 1.5mm（SoCとアルミ天面ヒートシンクの隙間。高熱伝導率のインジウムまたはシリコン製サーマルパッドを挟み込んで密着固定）。
+      * 役割: 熱源カメラ、LiDAR、上部UWB/920MHz複合アンテナへの同軸ケーブル長を最大でも30mm以内に収め、インピーダンス不整合による電波減衰を防止します。
+   2. EMIシールドバルクヘッド（中層・上層間の障壁）
+   * 材質: 厚さ0.5mmのニッケルめっき処理済み銅板（ボディシャーシのGNDとネジ止め接続）。
+      * 役割: 下層のモータードライバが発する大電流のPWM（パルス幅変調）高周波ノイズが、上層のRaspberry Pi 5の高速メモリバス（LPDDR5）に飛び込んでデータのビット反転（クラッシュ）を起こすリスクを、物理的なシールド壁で完全にシャットアウトします。
+   3. LAYER 2（中層：脊髄）配置仕様
+   * 配置重心: 12本の脚が外殻から内部に貫通してくる「物理的中心軸（シリンダー同心円上）」にSTM32H7の配置を一致させます。
+      * 役割: 各脚の付け根からのアナログ差動信号線の長さを完全に等長（すべて45mm以内）に設計することで、外部ノイズの混入を左右均等にし、差動アンプでのノイズ相殺能力（CMRR）を極大化させます。
+   4. LAYER 3（最下層：パワー）熱・電気仕様
+   * 垂直クリアランス（対底面）: 1.0mm（高発熱コンバータおよびTVSサージダイオードの底面を、熱伝導両面テープでボトムシャーシに完全接着）。
+      * 役割: 12脚・36個のモーターが一斉にフルパワー駆動した際に発生する熱を、ロボットが接地している冷たい床面や水流へダイレクトに放熱させます。
+      * スターグラウンド配置: バッテリーのマイナス入力端子から5mm以内の位置に、厚さ0.8mmの銅製ブスバーをボトム基板上に直付けします。すべてのロジック系GNDとパワー系GNDは、この点以外での交差・合流を物理的に禁止（絶縁分離）します。
+   
+------------------------------
+
+
