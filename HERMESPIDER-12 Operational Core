@@ -1,0 +1,49 @@
+
+## System Requirements Specification: HERMESPIDER-12 Operational Core## 1. Hardware Base Configuration
+
+* Chassis Form Factor: A4 to B4 footprint / Height: 10 to 15 cm (Spherical, ultra-low center of gravity Hypogastruridae (Globular Springtail) morphology).
+* Gross Weight / Payload: Total Gross Weight: approx. 2.0 to 3.0 kg (Includes 500 g to 1.0 kg dedicated emergency payload cargo).
+* Propulsion Mechanism: 12-Leg Articulated Architecture (6 legs symmetrically mirrored per side, capable of a full 180-degree vertical inversion/swing to eliminate upside-down immobilization).
+* Foot-End Topology: Anti-oil and anti-mud high-traction tread patterns combined with wet-surface micro-suction cups for high-stability structural anchoring.
+* Environmental Protection Rating: IP68 hermetically sealed isolation enclosures safeguarding the core computing unit, critical power supply, and battery cells.
+* Target Manufacturing Cost: Approx. 500,000 to 1,500,000 JPY per unit (Projected at scale manufacturing volume).
+
+## 2. Control & Network Hierarchy (5-Core Concentrated Deployment)
+
+* Main CPU (The Cerebrum):
+* Manages macro-route pathfinding, SLAM navigation, and real-time environmental 3D mapping using LiDAR and optical input arrays.
+   * Handles absolute "Override Interrupt Processing" to instantly break sub-CPU logic lockups or software deadlocks.
+   * Executes local Natural Language Processing (NLP) for real-time psychoacoustic stress analysis and dialogue mitigation with entrapped victims.
+* Sub-CPUs × 4 (Spinal Cord & Peripheral Nervous System):
+* Drives independent, parallel control loops across 4 distinct groups (3 legs per bus). The processing nodes are centrally concentrated inside the core chassis rather than at the leg joints, eliminating wiring stress and open-circuit wiring breakage under severe deflection.
+   * Embeds "Threshold Mechanical Springs" acting as passband physical low-pass filters at each foot-end to spontaneously absorb mechanical chatter and micro-oscillations caused by sand, mud, and loose gravel.
+   * Implements a decentralized Central Pattern Generator (CPG) capable of triggered reflex propagation. In the event of localized leg slippage or traction loss, an autonomous "0.001-Second Ultra-Fast Bracing Reflex" deploys auxiliary standing legs with a torque boost.
+
+## 3. 920MHz Multi-Hop Communication & Data Serialization Layer
+
+* RF Operating Band: 920 MHz Sub-GHz band (Prioritizing deep wave penetration through reinforced concrete, rebar, and dense structural debris fields).
+* Kinematic Trajectory Data Hyper-Compression Pipeline:
+1. Voxel Downsampling: Discretizes raw spatial mapping coordinates into static 10 cm granular cubes to reduce point density.
+   2. 2.5D Elevation Map Transformation: Rasterizes continuous 3D spatial points into high-density 2D planes representing localized floor clear heights and overhead ceilings.
+   3. Temporal Delta Encoding: Isolates and transmits only the sequential displacement vectors relative to the preceding one-second timestamp, encoding variables as low-byte integers.
+* Autonomous Ad-Hoc Mesh Networking:
+* Maintains continuous node availability tracking via bidirectional 100 ms interval heartbeat packet transmissions between adjacent units.
+   * Upon detecting a terminal routing node failure due to sudden architectural collapse, the surviving nodes execute an emergency power boost (up to the legal maximum of 20 mW), recalculating a backup network route topology within 0.001 seconds.
+
+## 4. On-Site Triage, Victim Verification, and Psychological Mitigation Sequence
+
+* Ventral Hatch Architecture (Emergency Cargo Shelter):
+* Features a hermetically sealed, double-gasket enclosure layout designed with a structural outward bevel to automatically shed liquid contamination when actuated.
+   * Employs non-contact, active infrared optoelectronic curtain arrays to instantly register target extraction when a victim pulls emergency supplies out.
+   * Automates an accelerated mechanical locking sequence within 0.5 seconds post-extraction to prevent internal biological and chemical secondary contamination of remaining cargo.
+* Unresponsive/Unconscious State Verification Protocol:
+* Upon localized infrared thermal signature acquisition, the unit initiates an active audio prompt sequence. If no microphone acoustic response or optical motion vector is registered over a continuous 10-second validation window, an unresponsive state is automatically confirmed.
+   * The unit maintains hatch lock integrity to conserve limited provisions, logs the immediate geographical coordinates and compressed kinematic pathing map data for top-priority packet transmission, and instantly routes away to find the next survivor.
+* Responsive State Protocol (Active Mitigation Phase 3):
+* Objective-Only Information Dissemination: Strict programmatic exclusion of ambiguous reassurances (e.g., words like "definitely" or "guaranteed"). The dialogue is limited to liability disclaimers, rescue operation confirmation, and actionable guidance instructions (e.g., instructing the victim to continue talking to maintain consciousness).
+   * Low-Bandwidth Acoustic-Text Conversion: Encourages verbal input from the victim, localizes speech data to a lightweight text format (compressed to a few bytes), and routes the strings back to command headquarters over low-throughput nodes.
+   * Familial Priority Triage Interlock: If localized keyword filters match high-urgency strings (such as "child," "infant," or "family"), the navigation layer re-evaluates the kinematics array, prioritizing search parameters toward the vector of those explicit entities.
+   * Entrapment/Grip Mitigation (Anti-Destruction Safeguard): When high mechanical resistance or crushing loads are encountered via joint torque sensors—indicating a panicked victim grabbing or trapping the chassis—the system increases joint holding torque. Concurrently, it re-triggers the automated acoustic warning loop, extending the software interaction window ($T_{\text{delay}}$) dynamically before implementing a backdrivable safety release to prevent servo motor burnout.
+
+------------------------------
+
