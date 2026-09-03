@@ -1,0 +1,164 @@
+import asyncio
+import time
+import math
+from typing import List, Dict
+
+# =====================================================================
+# 1. 物理定数およびシステムパラメータ（2026年 確定値）
+# =====================================================================
+MAX_TORQUE = 10.0          
+DELTA_X_THRESHOLD = 0.02   
+RSSI_LIMIT = -90.0         
+TIME_OUT_STUCK = 1.5       
+
+class HermesSpiderStatus:
+    def __init__(self):
+        self.ground_states = * 12 
+        self.sub_cpu_alerts = * 4  
+        self.current_rssi = -50.0      
+        self.child_capsules = 3        
+        self.is_purging = False        
+        self.ai_processing = False     # 🚨 [新規実装] AIスレッドの二重起動を防ぐリソースロック
+        self.is_holding = False        
+        self.stuck_duration = 0.0      
+        self.mission_complete = False
+
+status = HermesSpiderStatus()
+
+# =====================================================================
+# 2. サブCPU（脊髄）レイヤー（1ms周期・リアルタイム割り込み）
+# =====================================================================
+def sub_cpu_group_loop(group_id: int, leg_ids: List[int]):
+    for leg in leg_ids:
+        delta_x = measure_spring_displacement(leg)
+        status.ground_states[leg] = 1 if delta_x >= DELTA_X_THRESHOLD else 0
+
+    active_leg = leg_ids
+    reserve_legs = leg_ids[1:]
+    
+    if status.ground_states[active_leg] == 0:
+        status.sub_cpu_alerts[group_id] = 1 
+        for r_leg in reserve_legs:
+            if status.ground_states[r_leg] == 1:
+                apply_motor_control(r_leg, torque=MAX_TORQUE * 1.5, velocity=0)
+        apply_motor_control(active_leg, torque=0, velocity=0)
+    else:
+        status.sub_cpu_alerts[group_id] = 0
+
+# =====================================================================
+# 3. メインCPU（脳）レイヤー：最優先システム防衛スレッド（10msの絶対定周期）
+# =====================================================================
+async def main_control_loop():
+    LOOP_INTERVAL = 0.01  
+    
+    while not status.mission_complete:
+        loop_start = time.time()  
+        
+        active_alerts = sum(status.sub_cpu_alerts)
+        if active_alerts >= 1:
+            status.stuck_duration += LOOP_INTERVAL  
+        else:
+            status.stuck_duration = 0.0
+
+        if active_alerts >= 2 or status.stuck_duration >= TIME_OUT_STUCK:
+            print("🚨 [OVERRIDE] デッドロック検知。リセットステップ実行。")
+            execute_forced_reset_step() 
+            status.stuck_duration = 0.0
+            
+        raw_rssi = measure_920mhz_rssi()
+        status.current_rssi = 0.9 * status.current_rssi + 0.1 * raw_rssi
+        
+        if status.current_rssi <= RSSI_LIMIT and status.child_capsules > 0 and not status.is_purging:
+            status.is_purging = True 
+            status.child_capsules -= 1 
+            print(f"📡 [COMMUNICATION] 電波限界点。子亀をパージ。残弾: {status.child_capsules}")
+            
+            halt_all_legs()
+            purge_child_capsule() 
+            
+            await asyncio.sleep(3.0) 
+            
+            status.current_rssi = -40.0 
+            status.is_purging = False   
+            
+        elapsed = time.time() - loop_start
+        sleep_time = max(LOOP_INTERVAL - elapsed, 0.0)
+        await asyncio.sleep(sleep_time)
+
+# =====================================================================
+# 4. 会話AI・感情トリアージレイヤー（思考層・完全リソースセーフ）
+# =====================================================================
+async def cognitive_dialogue_layer():
+    while not status.mission_complete:
+        if victim_detected_by_sensors():
+            print("👤 要救助者を発見。バイタルスキャン開始。")
+            
+            await asyncio.sleep(10.0)
+            if not detect_any_voice_or_motion():
+                print("➡️ [トリアージ:黒/赤] 自力摂取不可能。3Dマップのみ送信し転進。")
+                send_data_to_hq(packet_type="URGENT_ROUTE_MAP")
+                continue 
+                
+            p_panic = calculate_advanced_panic_score()
+            t_delay = 120 + (300 - 120) * (p_panic ** 2)
+            
+            open_stomach_hatch()
+            try:
+                speak_voice_text("物資を確認してください。救助ルートを本部に送信完了。")
+                
+                start_t = time.time()
+                family_flag = False
+                
+                while time.time() - start_t < t_delay:
+                    # 🚨 [修正済] スレッドリーク対策：
+                    # 前のAIスレッド（Whisper推論）が完了していない場合は、新しいスレッドを作らずにパスする。
+                    if not status.ai_processing:
+                        status.ai_processing = True # AIロック展開
+                        try:
+                            text_data = await asyncio.to_thread(whisper_speech_to_text)
+                            
+                            if "[PANIC_AUDIO]" in text_data:
+                                send_rate_limited_panic_tag() 
+                            else:
+                                send_data_to_hq(packet_type="TEXT_VITAL", payload=text_data) 
+                            
+                            if "子ども" in text_data or "家族" in text_data:
+                                family_flag = True
+                                break 
+                        finally:
+                            status.ai_processing = False # AIロック確実な解除
+                        
+                    if detect_physical_holding_force():
+                        relax_all_leg_torques() 
+                        t_delay = min(t_delay + 30, 300) 
+                        speak_voice_text("落ち着いてください。私はここにいます。")
+                        
+                    await asyncio.sleep(0.1)
+
+                if family_flag:
+                    speak_voice_text("奥の捜索へ移動し、電波の届く限界までデータ送信を継続します。")
+                else:
+                    speak_voice_text("別のルートから回り込み、周辺の安全確認を継続します。") 
+
+                leave_child_capsule_as_decoy() 
+                
+            except Exception as e:
+                print(f"⚠️ [SYSTEM ERROR] 会像AI層で例外発生: {e}")
+                send_data_to_hq(packet_type="SYSTEM_ERROR_LOG", payload=str(e))
+            finally:
+                close_stomach_hatch()
+                resume_searching_legs() 
+            
+        await asyncio.sleep(1.0)
+
+# =====================================================================
+# 5. システム統合
+# =====================================================================
+async def main():
+    await asyncio.gather(
+        main_control_loop(),
+        cognitive_dialogue_layer()
+    )
+
+if __name__ == "__main__":
+    print("🛸 『ヘルメスパイダー12』統合制御ファームウェアコア（アトミック・リソースセーフ版） - 起動完了")
