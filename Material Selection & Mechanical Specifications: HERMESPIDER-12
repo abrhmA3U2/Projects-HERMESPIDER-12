@@ -1,0 +1,43 @@
+------------------------------
+## Material Selection & Mechanical Specifications: HERMESPIDER-12## 1. Central Core Chassis & Inner Enclosure (基殻・密閉空間)
+To safeguard the 5-core centralized computing unit and high-capacity battery, the inner container requires extreme torsional rigidity, IP68 hermetic sealability, and high thermal conductivity.
+
+* Primary Material: Aluminum Alloy (Al-Si-Mg system) / ISO AlSi10Mg (Processed via Precision Die-casting or Selective Laser Melting 3D Printing).
+* Rationale: Combines structural lightness with a high thermal conductivity (≈ 110 W/m·K) to act as a direct heat sink for the 5-core CPU array, avoiding thermal runaway within the sealed IP68 cavity.
+* Sealing Interfaces (Gaskets): Fluorosilicone Rubber (FVMQ) / ASTM D1418.
+* Rationale: Outperforms standard NBR or silicone. It maintains stable elastic recovery and sealing torque under extreme temperature fluctuations, structural fuel/oil contamination, and high mud pressure.
+
+## 2. Dynamic Articulated Legs & Links (可動脚・リンク機構)
+The 12-leg operational mechanism (36 DoF total) undergoes aggressive impact loads during the "0.001-Second Ultra-Fast Bracing Reflex" and high crushing forces from debris or panicked human grab.
+
+* Hip & Knee Structural Links: Carbon Fiber Reinforced PEEK (CF30-PEEK) / ISO 1043 PEEK-CF30.
+* Rationale: 30% carbon-fiber-reinforced Polyetheretherketone. It provides a specific strength matching structural aluminum but at a much lower density (≈ 1.45 g/cm³ vs. Aluminum 2.7 g/cm³). This is crucial for keeping the total leg assembly weight under the 3kg total target limit while resisting elastic deformation.
+* Threshold Springs (Physical Filter): Titanium Alloy (Ti-6Al-4V Grade 5) / ASTM B348.
+* Rationale: Offers the highest strength-to-weight ratio among spring-capable materials. It handles continuous high-frequency displacement without fatigue failure and resists corrosion in acidic/hazardous post-disaster floodwaters.
+
+## 3. Outer Floating Protection Shell (外殻・アウターシェル)
+The outer shell must absorb localized impacts (falling concrete chips, pounding from victims) and distribute the load away from the inner core chassis.
+
+* Primary Shield Dome: Polycarbonate/Acrylonitrile Butadiene Styrene Blend (PC-ABS) / ISO 2580.
+* Rationale: Combines the extreme impact toughness and heat resistance of PC with the high processability and dimensional stability of ABS. It acts as a sacrificial flexural barrier.
+* Dynamic Pressure Array Coating: Polyurethane Elastomer (TPU) Overmold / ISO 18064.
+* Rationale: A shore hardness of 80A–90A provides a soft, non-threatening touch for human interaction, dampens mechanical impact vibrations before they reach the internal piezoceramic sensors, and prevents PC-ABS fracturing.
+
+## 4. Foot-End Topology & Anchoring Interface (足端・接地面)
+The foot end requires high friction on slick oil/mud while allowing micro-suction on smooth submerged surfaces.
+
+* High-Traction Tread Pad: Fluorocarbon Elastomer (Viton / FKM) / ASTM D1418.
+* Rationale: Retains high friction coefficients (μ > 0.6) even when saturated with industrial oils, hydraulic fluids, or organic mud, preventing locomotive slippage.
+* Micro-Suction Pad Array (Geckopad): Polytetrafluoroethylene (PTFE) Nano-coated Silicone Micro-pillars.
+* Rationale: The core design utilizes van der Waals forces and micro-pressure differentiation for underwater anchoring. The PTFE nano-coating prevents self-adhesion and mud clogging during the lift-off phase, guaranteeing clean detachment.
+
+------------------------------
+## 材料特性のマトリクス概要（設計データ同期用）
+
+| Component | Target Material | Density (g/cm³) | Tensile Strength (MPa) | Primary Engineering Role |
+|---|---|---|---|---|
+| Inner Chassis | AlSi10Mg | 2.68 | 340 | Rigidity & CPU Heat Dissipation |
+| Leg Links | CF30-PEEK | 1.45 | 230 | Low Inertia & High-Impact Flex |
+| Springs | Ti-6Al-4V Gr5 | 4.43 | 950 | Fatigue-free Mechanical Filter |
+| Outer Shell | PC-ABS | 1.15 | 60 | Sacrificial Impact Absorption |
+| Foot Treads | FKM (Viton) | 1.80 | 15 | Oil-resistant High Friction |
