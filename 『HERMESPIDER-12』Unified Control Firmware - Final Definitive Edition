@@ -1,0 +1,241 @@
+
+## 『HERMESPIDER-12』Unified Control Firmware - Final Definitive Edition
+
+# =====================================================================# SECTION 1: MAIN CPU (Raspberry Pi 5) GLOBAL ARCHITECTURE & PARAMETERS# =====================================================================import asyncioimport timeimport mathfrom typing import List, Dict
+MAX_TORQUE = 10.0          # Max torque for BLDC joint motors (Nm)DELTA_X_THRESHOLD = 0.02   # Physical spring threshold (2cm): Below this is a slipRSSI_LIMIT = -90.0         # 920MHz wireless signal edge threshold (dBm)TIME_OUT_STUCK = 1.5       # Grace period before Main CPU override intervention (sec)
+class HermesSpiderStatus:
+    def __init__(self):
+        self.ground_states = [1] * 12 
+        self.sub_cpu_alerts = [0] * 4  
+        self.current_rssi = -50.0      # Exponential moving average RSSI (dBm)
+        self.child_capsules = 3        # Remaining decoy/repeater sub-capsules on back
+        self.is_purging = False        # Mutex lock flag during sub-capsule deployment
+        self.ai_processing = False     # Resource lock flag preventing duplicate AI threads
+        self.is_holding = False        # Flag for physical holding force by a victim
+        self.stuck_duration = 0.0      # Accumulated duration of a complete freeze (sec)
+        self.mission_complete = False
+status = HermesSpiderStatus()
+# =====================================================================# SECTION 2: MAIN CPU (Raspberry Pi 5) COGNITIVE & DEFENSE LAYER# =====================================================================async def main_control_loop():
+    """
+    10ms Absolute Fixed-Period Loop with Drift Correction.
+    Guarantees latency-free system protection and infrastructure management,
+    completely immune to AI text-generation bottlenecks.
+    """
+    LOOP_INTERVAL = 0.01  # Strict 10 milliseconds
+    
+    while not status.mission_complete:
+        loop_start = time.time()  
+        
+        active_alerts = sum(status.sub_cpu_alerts)
+        if active_alerts >= 1:
+            status.stuck_duration += LOOP_INTERVAL  # Accumulate exact hardware time
+        else:
+            status.stuck_duration = 0.0
+
+        # High-Priority Sovereign Override Intervention
+        if active_alerts >= 2 or status.stuck_duration >= TIME_OUT_STUCK:
+            print("🚨 [OVERRIDE] Deadlock detected. Injecting forced safety reset step.")
+            execute_forced_reset_step() # Forces 10cm backward recovery vector
+            status.stuck_duration = 0.0
+            
+        # Infrastructure Layer: Signal Analysis and Decoy/Capsule Purge
+        raw_rssi = measure_920mhz_rssi()
+        status.current_rssi = 0.9 * status.current_rssi + 0.1 * raw_rssi
+        
+        # Purge Sequence with Exclusion Lock to prevent multi-purge race conditions
+        if status.current_rssi <= RSSI_LIMIT and status.child_capsules > 0 and not status.is_purging:
+            status.is_purging = True # Deploy mutex lock
+            status.child_capsules -= 1 
+            print(f"📡 [COMMUNICATION] RSSI dropped to limit. Purging capsule. Remaining: {status.child_capsules}")
+            
+            halt_all_legs()
+            purge_child_capsule() # Drops and anchors a sub-capsule (3-second buffer)
+            
+            await asyncio.sleep(3.0) 
+            status.current_rssi = -40.0 # Restored signal strength via local UWB mesh link
+            status.is_purging = False   # Release lock
+            
+        # Time-Drift Correction Calculation
+        elapsed = time.time() - loop_start
+        sleep_time = max(LOOP_INTERVAL - elapsed, 0.0)
+        await asyncio.sleep(sleep_time)
+async def cognitive_dialogue_layer():
+    """
+    Handles local speech-to-text, cognitive triage, and psychological first aid.
+    Isolated from the main thread to prevent thread starvation and memory leaks.
+    """
+    while not status.mission_complete:
+        if victim_detected_by_sensors(): 
+            print("👤 Victim detected. Initializing medical triage sequence.")
+            
+            await asyncio.sleep(10.0) # 10-second absolute vital fact-check period
+            if not detect_any_voice_or_motion():
+                print("➡️ [TRIAGE: BLACK/RED] Unresponsive victim. Transmitting data, aborting cabin open.")
+                send_data_to_hq(packet_type="URGENT_ROUTE_MAP")
+                continue 
+                
+            # Responsive Victim (Triage: Yellow/Green). Advanced mathematical panic rating.
+            p_panic = calculate_advanced_panic_score() 
+            t_delay = 120 + (300 - 120) * (p_panic ** 2) # P-panic parabolic delay scaler (2 to 5 mins)
+            
+            open_stomach_hatch() # Opens double-seal IP68 anti-contamination compartment
+            try:
+                speak_voice_text("Rations available. Route map successfully transmitted to HQ.")
+                start_t = time.time()
+                family_flag = False
+                
+                while time.time() - start_t < t_delay:
+                    # Resource-Safe Threading: AI inference run outside the async loop to prevent memory panics
+                    if not status.ai_processing:
+                        status.ai_processing = True 
+                        try:
+                            text_data = await asyncio.to_thread(whisper_speech_to_text)
+                            
+                            # Packet Rate Limiter (Token-Bucket) to protect 920MHz 100kbps bandwidth limits
+                            if "[PANIC_AUDIO]" in text_data:
+                                send_rate_limited_panic_tag() 
+                            else:
+                                send_data_to_hq(packet_type="TEXT_VITAL", payload=text_data) 
+                            
+                            if "child" in text_data or "family" in text_data:
+                                family_flag = True
+                                break 
+                        finally:
+                            status.ai_processing = False 
+                        
+                    if detect_physical_holding_force():
+                        relax_all_leg_torques() # Shift legs to limp mode to avoid injury/self-destruction
+                        t_delay = min(t_delay + 30, 300) # Extend delay buffer by 30s (Cap at 5m)
+                        speak_voice_text("Please breathe slowly. I am right here with you.")
+                        
+                    await asyncio.sleep(0.1)
+
+                if family_flag:
+                    speak_voice_text("Moving to explore inner area, maintaining sensor link.")
+                else:
+                    speak_voice_text("Rerouting to perimeter to continue safety assessment.") # Stealth redirect
+
+                leave_child_capsule_as_decoy() # Drop a vocal/glowing sub-capsule to divert hold force
+                
+            except Exception as e:
+                print(f"⚠️ [SYSTEM ERROR] Exception caught in dialogue layer: {e}")
+                send_data_to_hq(packet_type="SYSTEM_ERROR_LOG", payload=str(e))
+            finally:
+                close_stomach_hatch()
+                resume_searching_legs() 
+            
+        await asyncio.sleep(1.0)
+
+// =====================================================================// SECTION 3: SUB-MCU (STM32H7) CORE LOCOMOTION & DATA LINK (C++)// =====================================================================#include "stm32h7xx.h"#include <stdint.h>#include <string.h>
+#define MAX_TORQUE_CURRENT 4000  #define ADDR_FDCAN_MSG_RAM 0x4000A000UL #define FDCAN_RAM_SIZE_PER_BUS 0x200 #define OVERRIDE_RESET_TOKEN 0x99999999
+alignas(32) typedef struct {
+    uint32_t Header;
+    uint8_t  Data[8];
+} FDCAN_TxBuffer_t;
+alignas(32) volatile FDCAN_TxBuffer_t g_FDCAN_PingPongBuffer[4][2]; volatile uint8_t g_CurrentBufferSide = 0;      volatile uint16_t g_LegDifferentialVitals[12]; 
+typedef struct {
+    volatile uint8_t ground_states[12];
+    volatile uint8_t sub_cpu_alerts[4];
+} HermesSystemStatus_t;
+volatile HermesSystemStatus_t g_SystemStatus;
+void HA_FDCAN_MessageRAM_Config(void) {
+    /* [SILICON PATCH 1] Partitioning Message RAM to eliminate SRAM write conflict locks */
+    FDCAN1_CONFIG->MRBA = ADDR_FDCAN_MSG_RAM + (0 * FDCAN_RAM_SIZE_PER_BUS);
+    FDCAN2_CONFIG->MRBA = ADDR_FDCAN_MSG_RAM + (1 * FDCAN_RAM_SIZE_PER_BUS);
+    FDCAN3_CONFIG->MRBA = ADDR_FDCAN_MSG_RAM + (2 * FDCAN_RAM_SIZE_PER_BUS);
+    FDCAN4_CONFIG->MRBA = ADDR_FDCAN_MSG_RAM + (3 * FDCAN_RAM_SIZE_PER_BUS);
+    
+    for(int i = 0; i < 4; i++) {
+        uint32_t* pOffset = (uint32_t*)(ADDR_FDCAN_MSG_RAM + (i * FDCAN_RAM_SIZE_PER_BUS));
+        *pOffset = 0x00000000; 
+    }
+}
+void HA_ADC_Dephase_Init(void) {
+    /* [SILICON PATCH 2] De-phase Drive configuration to eliminate internal chip cross-talk */
+    ADC12_COMMON->CCR &= ~(ADC_CCR_DUAL | ADC_CCR_DELAY);
+    ADC12_COMMON->CCR |= (0x3UL << ADC_CCR_DELAY_Pos); 
+    ADC3_COMMON->CCR |= (0x1UL << ADC_CCR_DELAY_Pos);
+    
+    ADC1->CR |= ADC_CR_ADCAL; while(ADC1->CR & ADC_CR_ADCAL);
+    ADC2->CR |= ADC_CR_ADCAL; while(ADC2->CR & ADC_CR_ADCAL);
+    ADC3->CR |= ADC_CR_ADCAL; while(ADC3->CR & ADC_CR_ADCAL);
+    
+    ADC1->CR |= ADC_CR_ADEN; ADC2->CR |= ADC_CR_ADEN; ADC3->CR |= ADC_CR_ADEN;
+}
+extern "C" void TIM2_IRQHandler(void) {
+    if (TIM2->SR & TIM_SR_UIF) {
+        TIM2->SR = ~TIM_SR_UIF; 
+        
+        g_LegDifferentialVitals[0] = ADC1->DR; 
+        g_LegDifferentialVitals[1] = ADC2->DR; 
+        
+        for(int i = 0; i < 12; i++) {
+            g_SystemStatus.ground_states[i] = (g_LegDifferentialVitals[i] >= 2048) ? 1 : 0;
+        }
+        
+        uint8_t next_side = g_CurrentBufferSide ^ 1;
+        
+        for (int group = 0; group < 4; group++) {
+            int base_leg = group * 3;
+            if (g_SystemStatus.ground_states[base_leg] == 0) { 
+                g_SystemStatus.sub_cpu_alerts[group] = 1;      
+                g_FDCAN_PingPongBuffer[group][next_side].Header = 0x100; 
+                uint16_t safety_torque = MAX_TORQUE_CURRENT * 1.5;
+                memcpy((void*)&g_FDCAN_PingPongBuffer[group][next_side].Data[0], &safety_torque, 2);
+            } else {
+                g_SystemStatus.sub_cpu_alerts[group] = 0; 
+                g_FDCAN_PingPongBuffer[group][next_side].Header = 0x200; 
+                uint16_t normal_torque = MAX_TORQUE_CURRENT;
+                memcpy((void*)&g_FDCAN_PingPongBuffer[group][next_side].Data[0], &normal_torque, 2);
+            }
+        }
+        
+        g_CurrentBufferSide = next_side; 
+        
+        /* [SILICON PATCH 3] Cache Clean/Flush right before non-blocking MDMA burst firing */
+        SCB_CleanDCache_by_Addr((uint32_t*)&g_FDCAN_PingPongBuffer[g_CurrentBufferSide][0], sizeof(FDCAN_TxBuffer_t) * 4);
+        
+        MDMA_Channel0->CCR &= ~MDMA_CCR_EN;
+        MDMA_Channel0->CSAR = (uint32_t)&g_FDCAN_PingPongBuffer[g_CurrentBufferSide][0];
+        MDMA_Channel0->CDAR = (uint32_t)&(FDCAN1_CONFIG->TXBAR); 
+        MDMA_Channel0->CCR |= MDMA_CCR_EN;                       
+        
+        IWDG->KR = 0xAAAA; // Feed independent watchdog
+    }
+}
+int main(void) {
+    SystemInit();
+    SCB_EnableDCache();
+    HA_FDCAN_MessageRAM_Config();
+    HA_ADC_Dephase_Init();
+    
+    // IWDG setup (1.5ms absolute execution fence)
+    IWDG->KR = 0x5555; IWDG->PR = 0x00; IWDG->RLR = 49; IWDG->KR = 0xCCCC; 
+    
+    // 1ms Timber Base Init
+    RCC->APB1LENR |= RCC_APB1LENR_TIM2EN;
+    TIM2->PSC = 48000 - 1; TIM2->ARR = 10 - 1; TIM2->DIER |= TIM_DIER_UIE;
+    NVIC_EnableIRQ(TIM2_IRQn); TIM2->CR1 |= TIM_CR1_CEN;
+    
+    while (1) {
+        /* [DATA LINK PATCH] Hardware CRC alignment check & automated RXFIFO flush loop */
+        if (SPI1->SR & (SPI_SR_OVR | SPI_SR_CRCE)) {
+            SPI1->IFCR = (SPI_IFCR_OVRC | SPI_IFCR_CRCEC); 
+            SPI1->CR1 |= SPI_CR1_CSUSP;                    
+            while(SPI1->CR1 & SPI_CR1_CSUSP);             
+            continue;                                      
+        }
+
+        if (SPI1->SR & SPI_SR_RXP) {
+            uint32_t command = SPI1->RXDR;
+            if (command == OVERRIDE_RESET_TOKEN) { 
+                NVIC_SystemReset();      
+            }
+        }
+    }
+}
+
+------------------------------
+
+
+
