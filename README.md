@@ -19,3 +19,10 @@ HERMESPIDER-12は、瓦礫が堆積する環境や冠水エリアといった過
 (音声のテキスト化（低帯域送信）、および外殻の圧力変動から静的荷重と動的接触（叩く・掴む行為）を分離するAC/DCフィルタによる対話時間制御。)
 
 ------------------------------
+## ⚠️ IMPORTANT DISCLAIMER / 免責事項
+[ENGLISH]
+This project, "HERMESPIDER-12" (including all CAD layouts, PCB designs, firmware, and control source code), is provided "AS IS" for research, educational, and development purposes under the designated open-source license.
+Due to the high-risk nature of disaster response and search-and-rescue operations, the authors and contributors make NO warranties, express or implied, regarding the operational safety, reliability, waterproof rating (IP68), or structural integrity of this robot in real-world environments. Under no circumstances shall the authors be liable for any direct, indirect, incidental, or consequential damages, including but not limited to hardware failure, physical injury, or loss of life resulting from the use, modification, or distribution of this project.
+[日本語]
+本プロジェクト「HERMESPIDER-12」（CADレイアウト、基板設計、ファームウェア、およびすべての制御ソースコードを含む）は、指定されたオープンソースライセンスのもと、研究・開発・教育目的のために「現状有姿」で提供されています。
+災害対応および人命捜索救助という高リスクな運用性質上、開発者および貢献者は、実環境における本ロボットの動作安全性、信頼性、防水性能（IP68）、または構造的完全性について、明示的か黙示的かを問わず一切の保証を行いません。本プロジェクトの利用、改変、または配布によって生じた、ハードウェアの破損、身体的負傷、あるいは人命の損失を含むいかなる直接的・間接的損害に対しても、開発者は一切の責任を負わないものとします。実機への適用および運用は、すべて利用者の自己責任において行ってください。
