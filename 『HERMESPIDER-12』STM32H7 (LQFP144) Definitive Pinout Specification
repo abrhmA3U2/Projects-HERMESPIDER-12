@@ -1,0 +1,41 @@
+## 『HERMESPIDER-12』STM32H7 (LQFP144) Definitive Pinout Specification
+
+| Pin Number (LQFP144) | Pin Name | Peripheral / Signal Mode | Target Dest. / Signal Name | Hardware Layer & Technical Description |
+|---|---|---|---|---|
+| PA11 | FDCAN1_RX | FDCAN Mode (AF9) | FDCAN Bus 1 (Right-Front Group) [Legs 1-3] | LAYER 3: Dedicated local multi-bus to eliminate 1Mbps network saturation. |
+| PA12 | FDCAN1_TX | FDCAN Mode (AF9) | FDCAN Bus 1 (Right-Front Group) [Legs 1-3] | Same as above. Non-blocking hardware time-stamp enabled. |
+| PB5 | FDCAN2_RX | FDCAN Mode (AF9) | FDCAN Bus 2 (Right-Rear Group) [Legs 4-6] | LAYER 3: Isolated 2nd-system FDCAN bus topology. |
+| PB6 | FDCAN2_TX | FDCAN Mode (AF9) | FDCAN Bus 2 (Right-Rear Group) [Legs 4-6] | Same as above. Independent Message RAM allocated via memory offset. |
+| PD0 | FDCAN3_RX | FDCAN Mode (AF9) | FDCAN Bus 3 (Left-Front Group) [Legs 7-9] | LAYER 3: Isolated 3rd-system FDCAN bus topology. |
+| PD1 | FDCAN3_TX | FDCAN Mode (AF9) | FDCAN Bus 3 (Left-Front Group) [Legs 7-9] | Same as above. |
+| PE2 | FDCAN4_RX | FDCAN Mode (AF9) | FDCAN Bus 4 (Left-Rear Group) [Legs 10-12] | LAYER 3: Isolated 4th-system FDCAN bus topology. |
+| PE3 | FDCAN4_TX | FDCAN Mode (AF9) | FDCAN Bus 4 (Left-Rear Group) [Legs 10-12] | Same as above. Complete structural isolation of the 36 servo actuators. |
+| PA5 | SPI1_SCK | SPI Slave Mode (AF5) | Raspberry Pi 5 Interface (Main CPU) | LAYER 1-2 Interconnect: Sovereign high-speed command override bypass line. |
+| PA6 | SPI1_MISO | SPI Slave Mode (AF5) | Raspberry Pi 5 Interface (Main CPU) | Same as above. Bypasses OS thread delays to transmit 1-bit alert signals. |
+| PA7 | SPI1_MOSI | SPI Slave Mode (AF5) | Raspberry Pi 5 Interface (Main CPU) | Same as above. |
+| PA4 | SPI1_NSS | SPI Slave Mode (AF5) | Raspberry Pi 5 Interface (Main CPU) | Same as above. Hardware Slave Select (NSS) configuration. |
+| PC0 | ADC1_IN10 | Analog Differential | Leg 1: Spring Displacement Sensor (+) | LAYER 2: 1ms ultra-fast sampling loop. Strict length matching (<45mm). |
+| PC1 | ADC1_IN11 | Analog Differential | Leg 1: Spring Displacement Sensor (-) | Same as above. Differential pair routing to eliminate ground bounce distortion. |
+| PC2 | ADC1_IN12 | Analog Differential | Leg 2: Spring Displacement Sensor (+) | LAYER 2: Equalized trace impedance layout. |
+| PC3 | ADC1_IN13 | Analog Differential | Leg 2: Spring Displacement Sensor (-) | Same as above. Clamped via external RC low-pass filter (10kHz cutoff). |
+| PA0 | ADC1_IN16 | Analog Differential | Leg 3: Spring Displacement Sensor (+) | LAYER 2: Legs 3 to 12 are balanced across independent channels |
+| PA1 | ADC1_IN17 | Analog Differential | Leg 3: Spring Displacement Sensor (-) | of the triple ADCs (ADC1/2/3) for concurrent Interleaved Mode. |
+| PF4 | ADC3_IN6 | Analog Differential | Outer Shell: Differential Pressure Sensor (+) | LAYER 2: Isolates human dynamic grip (AC) from wall pressure (DC). |
+| PF5 | ADC3_IN7 | Analog Differential | Outer Shell: Differential Pressure Sensor (-) | Same as above. Anti-jamming differential configuration. |
+| PF6 | ADC3_IN8 | Analog Single-End | Outer Shell: Thermal Compensation Thermistor | LAYER 2: Real-time hardware reference input to mathematically subtract |
+| | | | | thermal sensor drift caused by high friction (up to 80°C). |
+| PA8 | TIM1_CH1 | Timer Capture (AF1) | UWB Wireless Module (1PPS Sync Input) | LAYER 1-2 Link: Hardware Input Capture for PTP/IEEE1588 time tracking. |
+| | | | | Corrects clock drift to under 1 microsecond during TDMA blackouts. |
+| VREF+ | VREF+ | Reference Voltage | High-Precision Voltage Ref IC (3.3V) | LAYER 2: Isolated reference node linked directly to Single-Point Star GND. |
+
+------------------------------
+## 🛠️ Hardware Constraints & Implementation Notes
+
+   1. Alternate Function (AF) Multi-Driven Safety:
+   The assigned ports (such as PA11/PA12 for FDCAN1 and PA5/PA6/PA7 for SPI1) utilize non-overlapping alternate function matrices native to the STM32H7 chip layout. This guarantees zero pin-mux hardware conflicts when initializing registers via STMicroelectronics HAL/LL drivers.
+   2. De-phase Sampling Rule:
+   The ADC internal sampling registers must be configured to trigger ADC1, ADC2, and ADC3 sequentially with a forced 3-clock phase delay (De-phase Drive). This completely disperses internal silicon switching spikes, preventing cross-talk contamination onto sensor lines PC0 through PC3.
+   3. Message RAM Partitioning:
+   The SRAM designated for the FDCAN controllers must be hard-coded with non-overlapping offset boundaries in the firmware startup initialization files to prevent hardware bus-conflct locks during concurrent 1ms DMA writes.
+
+------------------------------
