@@ -1,0 +1,67 @@
+## HERMESPIDER-12 Internal PCB & Chassis Vertical Layout Schematic
+
+====================================== [TOP SHELL: Aluminum Die-cast] ======================================
+  [Thermal Pad] ──► █ SoC (Broadcom) █  █ UWB RF █  █ 920MHz RF █  ◄── [Direct Chassis Thermal Coupling]
+ ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 【LAYER 1: COMMUNICATION & COGNITIVE LAYER】                                                            │
+ │  [Components]:                                                                                          │
+ │   - Raspberry Pi 5 (8GB RAM) - Executing Dialogue AI / Triage NLP / Data Compression                    │
+ │   - Decoy/Capsule Release Actuator Control Circuit (Upper Hatch Release Solenoid)                       │
+ │   - UWB & 920MHz Hybrid Wireless Modules (Co-axial lines leading directly to top antennas)               │
+ └─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+        ▲                                                                                           ▲
+        │ [High-Speed Signal Bus: SPI / UART]                                                       │ [5V Logic Power]
+        ▼                                                                                           ▼
+ ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+ █ [GND-Plane EMI Shield Bulkhead] (Physical & Electromagnetic Isolation Barrier)                         █
+ ▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒
+        ▲                                                                                           ▲
+        │ [Optical Isolation: High-Speed Photocouplers]                                             │ [5V Isolated Power]
+        ▼                                                                                           ▼
+ ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 【LAYER 2: REAL-TIME SIGNAL PROCESSING LAYER】                                                          │
+ │  [Components]:                                                                                          │
+ │   - STM32H7 Dual-Core Microcontroller (Running Spinal Reflex RTOS Loops)                                │
+ │   - 12ch Differential Operational Amplifiers (ADC pre-filters for 12-leg spring sensors)               │
+ │   - 4ch Differential Pressure & Temperature Compensation Bridge Circuits (Outer Shell sensors)          │
+ └─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+                                                                                                    ▲
+                                                                                                    │ [5V Logic Power]
+                                                                                                    ▼
+ ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │ 【LAYER 3: HIGH-CURRENT POWER & BUS DRIVER LAYER】                                                       │
+ │  [Components]:                                                                                          │
+ │   - 4-Channel Independent FDCAN Transceivers (Separated for 4 leg groups to avoid bandwidth saturation)  │
+ │   - High-Power TVS (Transient Voltage Suppressor) Array & Bulk Capacitors (Absorbs Counter-EMF / Surges)  │
+ │   - High-Precision Buck Regulators (24V Battery Input ──► 12V Servo Power / 5V Logic Power)             │
+ └─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+ ┌─────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+ │  █ SINGLE-POINT STAR GROUND COPPER BUSBAR (0V ABSOLUTE REFERENCE PLATE) █                               │
+ └─────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+  [Thermal Pad] ──► █ Regulators / TVS █ ──────────────────────────► [Direct Bottom Chassis Thermal Coupling]
+==================================== [BOTTOM SHELL: Aluminum Die-cast] ====================================
+
+------------------------------
+## Manufacturing Parameters & Boundary Conditions## 1. LAYER 1: Communication & Cognitive Layer (Raspberry Pi 5)
+
+* Vertical Clearance (To Top Shell): 1.5 mm (Filled with high-conductivity indium or silicone thermal pads for seamless heat transfer to the chassis).
+* Routing Constraints: All co-axial cable lengths from the UWB/920MHz RF front-ends to the top-mounted antennas must be under 30 mm to prevent impedance mismatch and signal attenuation.
+* Thermal Management: Dissipates processing heat directly through the Top Aluminum Shell to the outer environment via the air-gap insulated outer skin, preventing thermal throttling.
+
+## 2. EMI Shield Bulkhead (Isolation Barrier)
+
+* Material: 0.5 mm thick nickel-plated copper plate, mechanically grounded directly to the main structural chassis GND.
+* Function: Physically blocks high-frequency electromagnetic interference (EMI) generated by Layer 3's high-current motor drivers from penetrating Layer 1's high-speed memory bus (LPDDR5), preventing data bit-flips and OS crashes.
+
+## 3. LAYER 2: Real-Time Signal Processing Layer (STM32H7)
+
+* Concentric Alignment: Centered exactly along the concentric axis of the leg-actuator entry points inside the chassis cylinder.
+* Routing Constraints: Differential analog traces from the 12 spring displacement sensors must be strictly length-matched (under 45 mm) to equalize external noise exposure, maximizing the Common-Mode Rejection Ratio (CMRR) of the differential op-amps.
+
+## 4. LAYER 3: High-Current Power & Bus Driver Layer (Power & Drivers)
+
+* Vertical Clearance (To Bottom Shell): 1.0 mm (High-power buck regulators and TVS arrays are bonded directly to the bottom chassis shell using thermal tape).
+* Thermal Management: Directs extreme joule heat generated during high-torque locomotion away from internal chips and dumps it into the ground, mud, or water through the bottom shell.
+* Star Ground Topology: A solid 0.8 mm thick copper busbar is soldered onto the PCB within 5 mm of the main 24V battery negative input. Logic GND, Power GND, and Chassis Shield GND are branched radially from this single point to suppress ground bounce completely.
+
+------------------------------
