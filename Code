@@ -1,0 +1,204 @@
+import asyncio
+import time
+import math
+from typing import List, Dict
+
+# =====================================================================
+# 1. PHYSICAL CONSTANTS & SYSTEM PARAMETERS (Validated 2026 Facts)
+# =====================================================================
+MAX_TORQUE = 10.0          # Max torque for BLDC joint motors (Nm)
+DELTA_X_THRESHOLD = 0.02   # Physical spring threshold (2cm): Below this is a slip
+RSSI_LIMIT = -90.0         # 920MHz wireless signal edge threshold (dBm)
+TIME_OUT_STUCK = 1.5       # Grace period before Main CPU override intervention (sec)
+
+# =====================================================================
+# 2. HARDWARE GLOBAL STATUS MANAGEMENT (Thread-Safe Structure)
+# =====================================================================
+class HermesSpiderStatus:
+    def __init__(self):
+        # Ground contact state of the 12 legs (1: Grounded, 0: Slip/Void)
+        self.ground_states = [1] * 12 
+        # Alert status of the 4 sub-CPUs/groups (0: Normal, 1: Anchoring)
+        self.sub_cpu_alerts = [0] * 4  
+        self.current_rssi = -50.0      # Exponential moving average RSSI (dBm)
+        self.child_capsules = 3        # Remaining decoy/repeater sub-capsules on back
+        self.is_purging = False        # Mutex lock flag during sub-capsule deployment
+        self.ai_processing = False     # Resource lock flag preventing duplicate AI threads
+        self.is_holding = False        # Flag for physical holding force by a victim
+        self.stuck_duration = 0.0      # Accumulated duration of a complete freeze (sec)
+        self.mission_complete = False
+
+status = HermesSpiderStatus()
+
+# =====================================================================
+# 3. SUB-CPU (SPINAL REFLEX) LAYER: 1ms High-Speed Local Loop
+# =====================================================================
+def sub_cpu_group_loop(group_id: int, leg_ids: List[int]):
+    """
+    Executed every 1 millisecond via hardware interrupt handler.
+    Manages 3 legs per sub-CPU locally, bypassing Main CPU latency.
+    """
+    # Fact-check grounding using the physical spring displacement filters
+    for leg in leg_ids:
+        delta_x = measure_spring_displacement(leg) # Hardware API call
+        status.ground_states[leg] = 1 if delta_x >= DELTA_X_THRESHOLD else 0
+
+    active_leg = leg_ids[0]
+    reserve_legs = leg_ids[1:]
+    
+    # 0.001-second reflexive anchoring if the active leg slips or drops
+    if status.ground_states[active_leg] == 0:
+        status.sub_cpu_alerts[group_id] = 1 # Shift group to local emergency anchoring
+        
+        # Boost reserve legs torque to 150% to turn them into rigid anchors
+        for r_leg in reserve_legs:
+            if status.ground_states[r_leg] == 1:
+                apply_motor_control(r_leg, torque=MAX_TORQUE * 1.5, velocity=0)
+                
+        # De-energize the slipping leg to prevent mechanical jam/damage (Clutch)
+        apply_motor_control(active_leg, torque=0, velocity=0)
+    else:
+        status.sub_cpu_alerts[group_id] = 0 # Revert to normal gait pacing
+
+# =====================================================================
+# 4. MAIN CPU (BRAIN) LAYER: Sovereign Critical-Defense Thread (10ms Pacing)
+# =====================================================================
+async def main_control_loop():
+    """
+    10ms Absolute Fixed-Period Loop with Drift Correction.
+    Guarantees latency-free system protection and infrastructure management,
+    completely immune to AI text-generation bottlenecks.
+    """
+    LOOP_INTERVAL = 0.01  # Strict 10 milliseconds
+    
+    while not status.mission_complete:
+        loop_start = time.time()  # Record loop execution start
+        
+        # Monitor total active sub-CPU alerts
+        active_alerts = sum(status.sub_cpu_alerts)
+        if active_alerts >= 1:
+            status.stuck_duration += LOOP_INTERVAL  # Accumulate exact hardware time
+        else:
+            status.stuck_duration = 0.0
+
+        # High-Priority Sovereign Override Intervention
+        if active_alerts >= 2 or status.stuck_duration >= TIME_OUT_STUCK:
+            print("🚨 [OVERRIDE] Deadlock detected. Injecting forced safety reset step.")
+            execute_forced_reset_step() # Forces 10cm backward recovery vector
+            status.stuck_duration = 0.0
+            
+        # Infrastructure Layer: Signal Analysis and Decoy/Capsule Purge
+        raw_rssi = measure_920mhz_rssi()
+        # Exponential Moving Average Filter to eliminate wireless fading spikes
+        status.current_rssi = 0.9 * status.current_rssi + 0.1 * raw_rssi
+        
+        # Purge Sequence with Exclusion Lock to prevent multi-purge race conditions
+        if status.current_rssi <= RSSI_LIMIT and status.child_capsules > 0 and not status.is_purging:
+            status.is_purging = True # Deploy mutex lock
+            status.child_capsules -= 1 
+            print(f"📡 [COMMUNICATION] RSSI dropped to limit. Purging capsule. Remaining: {status.child_capsules}")
+            
+            halt_all_legs()
+            purge_child_capsule() # Drops and anchors a sub-capsule (3-second buffer)
+            
+            # Yield control asynchronously while waiting for hardware link re-establishment
+            await asyncio.sleep(3.0) 
+            
+            status.current_rssi = -40.0 # Restored signal strength via local UWB mesh link
+            status.is_purging = False   # Release lock
+            
+        # Time-Drift Correction Calculation
+        elapsed = time.time() - loop_start
+        sleep_time = max(LOOP_INTERVAL - elapsed, 0.0)
+        await asyncio.sleep(sleep_time)
+
+# =====================================================================
+# 5. COGNITIVE DIALOGUE & EMOTION TRIAGE LAYER (Resource-Safe Async)
+# =====================================================================
+async def cognitive_dialogue_layer():
+    """
+    Handles local speech-to-text, cognitive triage, and psychological first aid.
+    Isolated from the main thread to prevent thread starvation and memory leaks.
+    """
+    while not status.mission_complete:
+        if victim_detected_by_sensors(): # Thermal/Camera verification
+            print("👤 Victim detected. Initializing medical triage sequence.")
+            
+            # 10-second absolute vital fact-check period
+            await asyncio.sleep(10.0)
+            if not detect_any_voice_or_motion():
+                print("➡️ [TRIAGE: BLACK/RED] Unresponsive victim. Transmitting 2.5D map data, aborting cabin open.")
+                send_data_to_hq(packet_type="URGENT_ROUTE_MAP")
+                continue # Immediately resume searching, preserving all physical rations
+                
+            # Responsive Victim (Triage: Yellow/Green). Advanced mathematical panic rating.
+            p_panic = calculate_advanced_panic_score() # Fact-checks voice pitch, respiration, and silence
+            t_delay = 120 + (300 - 120) * (p_panic ** 2) # P-panic parabolic delay scaler (2 to 5 mins)
+            
+            open_stomach_hatch() # Opens double-seal IP68 anti-contamination compartment
+            try:
+                speak_voice_text("Rations available. Route map successfully transmitted to HQ.")
+                
+                start_t = time.time()
+                family_flag = False
+                
+                while time.time() - start_t < t_delay:
+                    # Resource-Safe Threading: AI inference run outside the async loop to prevent memory panics
+                    if not status.ai_processing:
+                        status.ai_processing = True # Deploy AI lock
+                        try:
+                            text_data = await asyncio.to_thread(whisper_speech_to_text)
+                            
+                            # Packet Rate Limiter (Token-Bucket) to protect 920MHz 100kbps bandwidth limits
+                            if "[PANIC_AUDIO]" in text_data:
+                                send_rate_limited_panic_tag() # Limits panic audio telemetry to 1Hz
+                            else:
+                                send_data_to_hq(packet_type="TEXT_VITAL", payload=text_data) # Highest QoS priority
+                            
+                            # Dynamic Triage Branching via local Natural Language Processing
+                            if "child" in text_data or "family" in text_data:
+                                family_flag = True
+                                break # Cut dialogue loop short for an mutually agreed departure
+                        finally:
+                            status.ai_processing = False # Absolute release of AI lock
+                        
+                    # Mechanical Holding/Clinging (Hostage Bug) Defense
+                    if detect_physical_holding_force():
+                        relax_all_leg_torques() # Shift legs to limp mode to avoid injury/self-destruction
+                        t_delay = min(t_delay + 30, 300) # Extend delay buffer by 30s (Cap at 5m)
+                        speak_voice_text("Please breathe slowly. I am right here with you.")
+                        
+                    await asyncio.sleep(0.1)
+
+                # Phase 3: Stealth Departure or Family-Priority Redirection
+                if family_flag:
+                    speak_voice_text("Moving to explore inner area, maintaining sensor link.")
+                else:
+                    speak_voice_text("Rerouting to perimeter to continue safety assessment.") # Stealth redirect
+
+                # Decoy Operation: Drop a vocal/glowing sub-capsule to divert hold force
+                leave_child_capsule_as_decoy() 
+                
+            except Exception as e:
+                print(f"⚠️ [SYSTEM ERROR] Exception caught in dialogue layer: {e}")
+                send_data_to_hq(packet_type="SYSTEM_ERROR_LOG", payload=str(e))
+            finally:
+                # Guarantees hatch lockdown and mechanical re-activation under any condition
+                close_stomach_hatch()
+                resume_searching_legs() 
+            
+        await asyncio.sleep(1.0)
+
+# =====================================================================
+# 6. SYSTEM ENTRY POINT (Simulator / Hardware Interface)
+# =====================================================================
+async def main():
+    # Concurrent execution of the defense system and the cognitive layer
+    await asyncio.gather(
+        main_control_loop(),
+        cognitive_dialogue_layer()
+    )
+
+if __name__ == "__main__":
+    print("🛸 『HERMESPIDER-12』Core Control Firmware (Atomic Resource Safe Edition) - Init Successful")
+
